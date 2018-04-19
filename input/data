@@ -6,7 +6,7 @@
  &PARM01
  debuglevel=3,
  tRefFile='../indata/TRef.bin',
- sRef= 400*35.,
+ sRef= 200*35.,
 # viscC4Leith=2.15,
 # viscC4Leithd=2.15,
 # viscA4GridMax=0.8,

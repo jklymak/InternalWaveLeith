@@ -61,7 +61,7 @@ C     kSurface  :: index of surface level
 CEOP
 
 C     rad/s
-      omega = 0.5067
+      omega = 0.0001407
 C     m/s^2
       tideAmp = 0.05*omega
       IF ( fluidIsAir ) THEN

@@ -14,7 +14,7 @@
 cd $PBS_O_WORKDIR
 # top=$1  Passed as qsub  -v top=h60h27f20 runModel.sh
 
-PARENT=AbHillParam
+PARENT=InternalWaveLeith
 
 top=${PBS_JOBNAME}
 results=${WORKDIR}/${PARENT}/

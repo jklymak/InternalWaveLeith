@@ -1,5 +1,10 @@
 # Some Runs
 
+## Goals:
+
+  - see what happens to an interna wave field if we spin up and then turn on Leith vuscisity.
+  - running: IWNoLeith for 16 tidal cycles then doing a save for one tidal cycle.
+
 ## Contents:
 
   - `MITgcm66h` is my version with `NF90io`.

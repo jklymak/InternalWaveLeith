@@ -129,8 +129,8 @@ mkdir(outdir+'/../build/')
 # copy any data that is in the local indata
 shutil.copytree('../indata/', outdir+'/../indata/')
 try:
-    shutil.copy('../build/mitgcmuvU%02d'%u0, outdir+'/../build/mitgcmuv')
-    shutil.copy('../build/mitgcmuvU%02d'%u0, outdir+'/../build/mitgcmuv%02d'%u0)
+    shutil.copy('../build/mitgcmuv', outdir+'/../build/mitgcmuv')
+    # shutil.copy('../build/mitgcmuvU%02d'%u0, outdir+'/../build/mitgcmuv%02d'%u0)
     shutil.copy('../build/Makefile', outdir+'/../build/Makefile')
 except:
     pass
