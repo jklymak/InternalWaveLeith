@@ -12,7 +12,7 @@ import shutil,os,glob
 import scipy.signal as scisig
 from maketopo import getTopo2D
 import logging
-from replace_data import replace_data
+# from replace_data import replace_data
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -27,8 +27,8 @@ runtype = 'low'  # 'full','filt','low'
 setupname=''
 u0 = 10
 N0 = 1e-3
-f0 = 1.410e-4
-runname='LW1km%sU%dAmp%df%03d'%(runtype,u0, amp, f0*1000000)
+f0 = 1.e-4
+runname='IWNoLeith'
 comments = 'Boo'
 
 # to change U we need to edit external_forcing recompile
@@ -41,16 +41,13 @@ indir =outdir0+'/indata/'
 H = 4000.
 U0 = u0/100.
 
-# need some info.  This comes from `leewave3d/EmbededRuns.ipynb` on `valdez.seos.uvic.ca`
-# the maxx and maxy are for finer scale runs.
-dx0=100.
-dy0=100.
-maxx = 409600.0
-maxy = 118400.0
+# the maxx and maxy are for runs.
+dx0=1000.
+dy0=1000.
 
 # reset f0 in data
-shutil.copy('data', 'dataF')
-replace_data('dataF', 'f0', '%1.3e'%f0)
+#shutil.copy('data', 'dataF')
+#replace_data('dataF', 'f0', '%1.3e'%f0)
 
 
 # topography parameters:
@@ -67,8 +64,8 @@ elif runtype=='low':
 
 # model size
 nx = 8*52
-ny = 2*64
-nz = 400
+ny = 4*64
+nz = 200
 
 _log.info('nx %d ny %d', nx, ny)
 
@@ -131,11 +128,16 @@ mkdir(outdir+'/../build/')
 
 # copy any data that is in the local indata
 shutil.copytree('../indata/', outdir+'/../indata/')
+try:
+    shutil.copy('../build/mitgcmuvU%02d'%u0, outdir+'/../build/mitgcmuv')
+    shutil.copy('../build/mitgcmuvU%02d'%u0, outdir+'/../build/mitgcmuv%02d'%u0)
+    shutil.copy('../build/Makefile', outdir+'/../build/Makefile')
+except:
+    pass
 
-shutil.copy('../build/mitgcmuvU%02d'%u0, outdir+'/../build/mitgcmuv')
-shutil.copy('../build/mitgcmuvU%02d'%u0, outdir+'/../build/mitgcmuv%02d'%u0)
-shutil.copy('../build/Makefile', outdir+'/../build/Makefile')
-shutil.copy('dataF', outdir+'/data')
+
+shutil.copy('data', outdir+'/data')
+
 shutil.copy('eedata', outdir)
 shutil.copy('data.kl10', outdir)
 try:
@@ -155,10 +157,11 @@ try:
   shutil.copy('data.pkg', outdir+'/data.pkg')
 except:
   pass
-try:
-  shutil.copy('data.rbcs', outdir+'/data.rbcs')
-except:
-  pass
+if 0:
+    try:
+      shutil.copy('data.rbcs', outdir+'/data.rbcs')
+    except:
+      pass
 
 _log.info("Done copying files")
 
@@ -168,7 +171,7 @@ _log.info("Done copying files")
 
 ##### Dx ######
 
-dx = zeros(nx)+maxx/nx
+dx = dx0 + np.zeros(nx)
 
 # dx = zeros(nx)+100.
 x=np.cumsum(dx)
@@ -178,7 +181,7 @@ _log.info('XCoffset=%1.4f'%x[0])
 
 ##### Dy ######
 
-dy = zeros(ny)+maxy/ny
+dy = dy0 + np.zeros(ny)
 
 # dx = zeros(nx)+100.
 y=np.cumsum(dy)
@@ -187,7 +190,6 @@ maxy=np.max(y)
 _log.info('YCoffset=%1.4f'%y[0])
 
 _log.info('dx %f dy %f', dx[0], dy[0])
-
 
 # save dx and dy
 with open(indir+"/delX.bin", "wb") as f:
@@ -221,7 +223,13 @@ h = np.real(h - np.min(h))
 # hband = np.real(hband - np.mean(hband)+np.mean(h))
 hlow = np.real(hlow - np.mean(hlow) + np.mean(h))
 
-d= hlow - H
+# now add a Gaussian bump....
+X, Y = np.meshgrid(x-x.mean(), y-y.mean())
+sigx = 10e3
+sigy = 75e3
+hh = 1800.*np.exp(-(X/sigx)**2 - (Y/sigy)**2)
+
+d= hlow - H + hh
 
 with open(indir+"/topog.bin", "wb") as f:
   d.tofile(f)
@@ -232,10 +240,10 @@ _log.info(shape(d))
 fig, ax = plt.subplots(2,1)
 _log.info('%s %s', shape(x),shape(d))
 ax[0].plot(x/1.e3,d[0,:].T)
+ax[0].plot(x/1.e3,d[128,:].T)
 pcm=ax[1].pcolormesh(x/1.e3,y/1.e3,d,rasterized=True)
 fig.colorbar(pcm,ax=ax[1])
 fig.savefig(outdir+'/figs/topo.png')
-
 
 ##################
 # dz:
@@ -265,11 +273,11 @@ plt.savefig(outdir+'/figs/TO.pdf')
 
 ###########################
 # velcoity data
-aa = np.zeros((nz,ny,nx))
-for i in range(nx):
-    aa[:,:,i]=U0
-with open(indir+"/Uinit.bin", "wb") as f:
-    aa.tofile(f)
+#aa = np.zeros((nz,ny,nx))
+#for i in range(nx):
+#    aa[:,:,i]=U0
+#with open(indir+"/Uinit.bin", "wb") as f:
+#    aa.tofile(f)
 
 
 ########################
@@ -277,33 +285,25 @@ with open(indir+"/Uinit.bin", "wb") as f:
 # In data.rbcs, we have set tauRelaxT=17h = 61200 s
 # here we wil set the first and last 50 km in *y* to relax at this scale and
 # let the rest be free.
+if 0:
+    iny = np.where((y<50e3) | (y>maxy-50e3))[0]
 
-iny = np.where((y<50e3) | (y>maxy-50e3))[0]
+    aa = np.zeros((nz,ny,nx))
+    for i in iny:
+        aa[:,:,i]=1.
 
-aa = np.zeros((nz,ny,nx))
-for i in iny:
-    aa[:,:,i]=1.
+    with open(indir+"/spongeweight.bin", "wb") as f:
+        aa.tofile(f)
+    f.close()
 
-with open(indir+"/spongeweight.bin", "wb") as f:
-    aa.tofile(f)
-f.close()
+    aa=np.zeros((nz,ny,nx))
+    aa+=T0[:,newaxis,newaxis]
+    _log.info(shape(aa))
 
-aa=np.zeros((nz,ny,nx))
-aa+=T0[:,newaxis,newaxis]
-_log.info(shape(aa))
+    with open(indir+"/Tforce.bin", "wb") as f:
+        aa.tofile(f)
+    f.close()
 
-with open(indir+"/Tforce.bin", "wb") as f:
-    aa.tofile(f)
-f.close()
-
-
-
-###### Manually make the directories
-#for aa in range(128):
-#    try:
-#        mkdir(outdir0+'%04d'%aa)
-#    except:
-#        pass
 
 _log.info('Writing info to README')
 ############ Save to README

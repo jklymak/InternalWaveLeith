@@ -57,9 +57,13 @@ C     i,j       :: Loop counters
 C     kSurface  :: index of surface level
       INTEGER i, j
       INTEGER kSurface
+      _RL tideAmp, omega
 CEOP
 
-
+C     rad/s
+      omega = 0.5067
+C     m/s^2
+      tideAmp = 0.05*omega
       IF ( fluidIsAir ) THEN
        kSurface = 0
       ELSEIF ( usingPCoords ) THEN
@@ -89,6 +93,14 @@ C--   Forcing term
      I                       iMin,iMax,jMin,jMax, kLev, bi,bj,
      I                       myTime, 0, myThid )
 #endif /* ALLOW_FIZHI */
+
+C     JMK: add a body force for tide...
+      DO j=1,sNy+1
+         DO i=0,sNx+1
+            gU(i,j,kLev,bi,bj) = gU(i,j,kLev,bi,bj)
+     &           +tideAmp*SIN(omega*myTime)
+         ENDDO
+      ENDDO
 
 C     Ocean: Add momentum surface forcing (e.g., wind-stress) in surface level
       IF ( kLev .EQ. kSurface ) THEN
@@ -208,7 +220,7 @@ C     Needs to be slow for low f....
       spinup = 50.*3600.*1.01
 C      spinup = 100.
 C      U0=0.1*MIN(myTime/spinup,1.)
-      U0=0.1
+      U0=0.00
 C      WRITE(msgBuf,'(E10.4)')  U0
 C      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit, SQUEEZE_RIGHT,
 C     $     myThid )
