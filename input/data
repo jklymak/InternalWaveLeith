@@ -56,7 +56,7 @@
 
 # Time stepping parameters
  &PARM03
- nIter0=0,
+ startTime=0,
 # nTimeSteps=480,
 # 17 tidal periods. 714240 is 16..
  endTime=759880,

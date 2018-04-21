@@ -21,7 +21,7 @@
 # 714240 to 758880
 # fields.
  frequency(3)  = -1800,
- timePhase(3)  = 714240,
+ timePhase(3)  = 982080,
  fields(1:5,3) = 'UVEL    ',
                  'VVEL    ',
                  'WVEL    ',
@@ -31,7 +31,7 @@
 #
  filename(4)   = 'final2d'
  frequency(4)  = -1800,
- timePhase(4)  = 714240,
+ timePhase(4)  = 982080,
  fields(1:2,4) = 'ETAN    ',
                  'PHIBOT  ',
 #
