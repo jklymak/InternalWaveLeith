@@ -57,11 +57,13 @@ C     i,j       :: Loop counters
 C     kSurface  :: index of surface level
       INTEGER i, j
       INTEGER kSurface
-      _RL tideAmp, omega
+      _RL tideAmp, omega, dtF
 CEOP
 
 C     rad/s
       omega = 0.0001407
+C     15 tidal cycles....
+      dtF = 669600.0
 C     m/s^2
       tideAmp = 0.05*omega
       IF ( fluidIsAir ) THEN
@@ -98,8 +100,8 @@ C     JMK: add a body force for tide...
       DO j=1,sNy+1
          DO i=0,sNx+1
             gU(i,j,kLev,bi,bj) = gU(i,j,kLev,bi,bj)
-     &           +tideAmp*SIN(omega*myTime)
-     &           +tideAmp/3.0*SIN(omega*5.67*myTime)
+     &           +tideAmp*SIN(omega*(myTime+dtF))
+     &           +tideAmp/3.0*SIN(omega*5.67*(myTime+dtF))
          ENDDO
       ENDDO
 

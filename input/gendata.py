@@ -42,8 +42,8 @@ H = 4000.
 U0 = u0/100.
 
 # the maxx and maxy are for runs.
-dx0=1000.
-dy0=1000.
+dx0=100.
+dy0=100.
 
 # reset f0 in data
 #shutil.copy('data', 'dataF')
@@ -63,9 +63,18 @@ elif runtype=='low':
 
 
 # model size
-nx = 8*52
-ny = 4*64
-nz = 200
+# nx must equal 4160
+# ny must equal 2560
+# npx * npy = 1024
+npx =  32
+npy =  32
+
+nx = 4160
+ny = 2560
+nnx = nx / npx
+nny = ny / npy
+_log.info('nx per tile %d ny pertile %d', nnx, nny)
+nz = 400
 
 _log.info('nx %d ny %d', nx, ny)
 
@@ -273,11 +282,33 @@ plt.savefig(outdir+'/figs/TO.pdf')
 
 ###########################
 # velcoity data
-#aa = np.zeros((nz,ny,nx))
-#for i in range(nx):
-#    aa[:,:,i]=U0
-#with open(indir+"/Uinit.bin", "wb") as f:
-#    aa.tofile(f)
+
+aa = np.zeros((ny,nx))
+for i in range(nx):
+    aa[:,:,i]=U0
+with open(indir+"/Etainit.bin", "wb") as f:
+    aa.tofile(f)
+
+aa = np.zeros((nz,ny,nx))
+for i in range(nx):
+    aa[:,:,i]=U0
+with open(indir+"/Uinit.bin", "wb") as f:
+    aa.tofile(f)
+
+aa = np.zeros((nz,ny,nx))
+for i in range(nx):
+    aa[:,:,i]=U0
+with open(indir+"/Vinit.bin", "wb") as f:
+    aa.tofile(f)
+
+aa = np.zeros((nz,ny,nx))
+for i in range(nx):
+    aa[:,:,i]=U0
+with open(indir+"/Tinit.bin", "wb") as f:
+    aa.tofile(f)
+
+
+
 
 
 ########################

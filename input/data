@@ -58,10 +58,10 @@
  &PARM03
  startTime=0,
 # nTimeSteps=480,
-# 17 tidal periods. 714240 is 16..
- endTime=759880,
+# 2 tidal periods.
+ endTime=89300,
 # make multiple of 12.4...
- deltaT=49.6,
+ deltaT=6.2,
  abEps=0.1,
 # once
  pChkptFreq=0,
@@ -84,10 +84,10 @@
 
 # Input datasets
  &PARM05
-# hydrogThetaFile='../indata/T.init',
-# uVelInitFile='../indata/Uinit.bin',
-# vVelInitFile='../indata/V.init',
-# pSurfInitFile='../indata/Eta.init',
+ hydrogThetaFile='../indata/Tinit.bin',
+ uVelInitFile='../indata/Uinit.bin',
+ vVelInitFile='../indata/Vinit.bin',
+ pSurfInitFile='../indata/Etainit.bin',
  bathyFile='../indata/topog.bin',
  mdsioLocalDir='./junk/',
  /
