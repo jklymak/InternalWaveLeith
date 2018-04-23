@@ -2,8 +2,12 @@
 
 ## Goals:
 
-  - see what happens to an interna wave field if we spin up and then turn on Leith vuscisity.
+  - see what happens to an internal wave field if we spin up and then turn on Leith viscosity.
   - running: IWNoLeith for 16 tidal cycles then doing a save for one tidal cycle.
+
+## Results:
+
+See https://github.com/jklymak/InternalWaveLeith/blob/master/python/PlotSlices.ipynb
 
 ## Contents:
 
