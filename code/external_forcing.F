@@ -61,9 +61,10 @@ C     kSurface  :: index of surface level
 CEOP
 
 C     rad/s
+
       omega = 0.0001407
 C     m/s^2
-      tideAmp = 0.05*omega
+      tideAmp = 0.05*0.0000696267946
       IF ( fluidIsAir ) THEN
        kSurface = 0
       ELSEIF ( usingPCoords ) THEN
@@ -269,13 +270,6 @@ C     $     myThid )
          DO i=0,sNx+1
             gV(i,j,kLev,bi,bj) = gV(i,j,kLev,bi,bj)
      &           +fCori(i,j,bi,bj)*U0
-         ENDDO
-      ENDDO
-C     JMK: add a body force for tide...
-      DO j=1,sNy+1
-         DO i=0,sNx+1
-            gV(i,j,kLev,bi,bj) = gV(i,j,kLev,bi,bj)
-     &           +tideAmp*fCori(i,j,bi,bj)/omega*COS(omega*myTime)
          ENDDO
       ENDDO
 

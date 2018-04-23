@@ -2,7 +2,7 @@
 #PBS -m be
 #PBS -M jklymak@gmail.com
 #PBS -l select=1:ncpus=1
-#PBS -l walltime=00:20:00
+#PBS -l walltime=01:20:00
 #PBS -q transfer
 #PBS -A ONRDC35552400
 #PBS -j oe

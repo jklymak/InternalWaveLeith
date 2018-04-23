@@ -86,7 +86,7 @@
  &PARM05
 # hydrogThetaFile='../indata/T.init',
 # uVelInitFile='../indata/Uinit.bin',
-# vVelInitFile='../indata/V.init',
+ vVelInitFile='../indata/Vinit.bin',
 # pSurfInitFile='../indata/Eta.init',
  bathyFile='../indata/topog.bin',
  mdsioLocalDir='./junk/',

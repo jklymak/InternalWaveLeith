@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.DEBUG)
 _log = logging.getLogger(__name__)
 
 runnum = 1
-amp = 305.
+ampTopo = 305.
 K0 = 1.8e-4/2./np.pi
 L0 = 1.8e-4/2./np.pi
 runtype = 'low'  # 'full','filt','low'
@@ -28,6 +28,11 @@ setupname=''
 u0 = 10
 N0 = 1e-3
 f0 = 1.e-4
+omega = 2 * np.pi / 12.4 / 3600
+amp = (omega**2 - f0**2) / omega
+amp = 0.05
+ampV = f0 * amp / omega
+_log.info('AmpV %f', ampV)
 runname='IWNoLeith'
 comments = 'Boo'
 
@@ -214,7 +219,7 @@ xtopo, ytopo, h, hband, hlow, k, l, P0, Pband, Plow = getTopo2D(
         dx[0], maxx+dx[0],
         dy[0],maxy+dy[0],
         mu=3.5, K0=K0, L0=L0,
-       amp=amp, kmax=1./300., kmin=1./6000., seed=seed)
+       amp=ampTopo, kmax=1./300., kmin=1./6000., seed=seed)
 _log.info('shape(hlow): %s', np.shape(hlow))
 _log.info('maxx %f dx[0] %f maxx/dx %f nx %d', maxx, dx[0], maxx/dx[0], nx)
 _log.info('maxxy %f dy[0] %f maxy/dy %f ny %d', maxy, dy[0], maxy/dy[0], ny)
@@ -228,7 +233,7 @@ X, Y = np.meshgrid(x-x.mean(), y-y.mean())
 sigx = 10e3
 sigy = 75e3
 hh = 1800.*np.exp(-(X/sigx)**2 - (Y/sigy)**2)
-
+print(hlow[50, :])
 d= hlow - H + hh
 
 with open(indir+"/topog.bin", "wb") as f:
@@ -273,11 +278,10 @@ plt.savefig(outdir+'/figs/TO.pdf')
 
 ###########################
 # velcoity data
-#aa = np.zeros((nz,ny,nx))
-#for i in range(nx):
-#    aa[:,:,i]=U0
-#with open(indir+"/Uinit.bin", "wb") as f:
-#    aa.tofile(f)
+aa = np.zeros((nz,ny,nx)) + ampV
+with open(indir+"/Vinit.bin", "wb") as f:
+    aa.tofile(f)
+
 
 
 ########################

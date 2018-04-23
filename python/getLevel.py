@@ -1,7 +1,7 @@
 import xarray as xr
 
 for td in ['IWNoLeith', 'IWAllLeith']:
-    todo = '../results/{}/input/final.nc'.format(td)
+    todo = '../results/{}/input/spinup.nc'.format(td)
     k = 50
     with xr.open_dataset(todo) as ds:
         print(ds)
