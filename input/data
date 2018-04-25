@@ -84,7 +84,7 @@
 
 # Input datasets
  &PARM05
-# hydrogThetaFile='../indata/T.init',
+ hydrogThetaFile='../indata/Tinit.bin',
 # uVelInitFile='../indata/Uinit.bin',
  vVelInitFile='../indata/Vinit.bin',
 # pSurfInitFile='../indata/Eta.init',

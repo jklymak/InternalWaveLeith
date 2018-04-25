@@ -33,7 +33,7 @@ amp = (omega**2 - f0**2) / omega
 amp = 0.05
 ampV = f0 * amp / omega
 _log.info('AmpV %f', ampV)
-runname='IWNoLeith'
+runname='TestIWNoLeith'
 comments = 'Boo'
 
 # to change U we need to edit external_forcing recompile
@@ -275,6 +275,20 @@ f.close()
 plt.clf()
 plt.plot(T0,z)
 plt.savefig(outdir+'/figs/TO.pdf')
+
+### temperature data
+
+
+for k in range(nz):
+    aa = np.zeros((ny, nx))
+    aa[:, :] += T0[k]
+    if k == 0:
+        mode = 'wb'
+    else:
+        mode = 'ab'
+    with open(indir+"/Tinit.bin", mode) as f:
+        aa.tofile(f)
+
 
 ###########################
 # velcoity data
