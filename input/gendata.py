@@ -11,6 +11,7 @@ from os import mkdir
 import shutil,os,glob
 import scipy.signal as scisig
 from maketopo import getTopo2D
+import xarray as xr
 import logging
 # from replace_data import replace_data
 
@@ -189,10 +190,7 @@ maxx=np.max(x)
 _log.info('XCoffset=%1.4f'%x[0])
 
 ##### Dy ######
-
 dy = dy0 + np.zeros(ny)
-
-# dx = zeros(nx)+100.
 y=np.cumsum(dy)
 y=y-y[0]
 maxy=np.max(y)
@@ -216,43 +214,78 @@ fig.savefig(outdir+'/figs/dx.pdf')
 
 ######## Bathy ############
 # get the topo:
-d=zeros((ny,nx))
-# we will add a seed just in case we want to redo this exact phase later...
-seed = 20171117
-xtopo, ytopo, h, hband, hlow, k, l, P0, Pband, Plow = getTopo2D(
-        dx[0], maxx+dx[0],
-        dy[0],maxy+dy[0],
-        mu=3.5, K0=K0, L0=L0,
-       amp=amp, kmax=1./300., kmin=1./6000., seed=seed)
-_log.info('shape(hlow): %s', np.shape(hlow))
-_log.info('maxx %f dx[0] %f maxx/dx %f nx %d', maxx, dx[0], maxx/dx[0], nx)
-_log.info('maxxy %f dy[0] %f maxy/dy %f ny %d', maxy, dy[0], maxy/dy[0], ny)
+if 0:
+    d=zeros((ny,nx))
+    # we will add a seed just in case we want to redo this exact phase later...
+    seed = 20171117
+    xtopo, ytopo, h, hband, hlow, k, l, P0, Pband, Plow = getTopo2D(
+            dx[0], maxx+dx[0],
+            dy[0],maxy+dy[0],
+            mu=3.5, K0=K0, L0=L0,
+           amp=amp, kmax=1./300., kmin=1./6000., seed=seed)
+    _log.info('shape(hlow): %s', np.shape(hlow))
+    _log.info('maxx %f dx[0] %f maxx/dx %f nx %d', maxx, dx[0], maxx/dx[0], nx)
+    _log.info('maxxy %f dy[0] %f maxy/dy %f ny %d', maxy, dy[0], maxy/dy[0], ny)
 
-h = np.real(h - np.min(h))
-# hband = np.real(hband - np.mean(hband)+np.mean(h))
-hlow = np.real(hlow - np.mean(hlow) + np.mean(h))
+    h = np.real(h - np.min(h))
+    # hband = np.real(hband - np.mean(hband)+np.mean(h))
+    hlow = np.real(hlow - np.mean(hlow) + np.mean(h))
 
-# now add a Gaussian bump....
-X, Y = np.meshgrid(x-x.mean(), y-y.mean())
-sigx = 10e3
-sigy = 75e3
-hh = 1800.*np.exp(-(X/sigx)**2 - (Y/sigy)**2)
+    # now add a Gaussian bump....
+    X, Y = np.meshgrid(x-x.mean(), y-y.mean())
+    sigx = 10e3
+    sigy = 75e3
+    hh = 1800.*np.exp(-(X/sigx)**2 - (Y/sigy)**2)
 
-d= hlow - H + hh
+    d= hlow - H + hh
 
-with open(indir+"/topog.bin", "wb") as f:
-  d.tofile(f)
-f.close()
+    with open(indir+"/topog.bin", "wb") as f:
+      d.tofile(f)
+    f.close()
 
-_log.info(shape(d))
+    _log.info(shape(d))
 
-fig, ax = plt.subplots(2,1)
-_log.info('%s %s', shape(x),shape(d))
-ax[0].plot(x/1.e3,d[0,:].T)
-ax[0].plot(x/1.e3,d[128,:].T)
-pcm=ax[1].pcolormesh(x/1.e3,y/1.e3,d,rasterized=True)
-fig.colorbar(pcm,ax=ax[1])
-fig.savefig(outdir+'/figs/topo.png')
+    fig, ax = plt.subplots(2,1)
+    _log.info('%s %s', shape(x),shape(d))
+    ax[0].plot(x/1.e3,d[0,:].T)
+    ax[0].plot(x/1.e3,d[128,:].T)
+    pcm=ax[1].pcolormesh(x/1.e3,y/1.e3,d,rasterized=True)
+    fig.colorbar(pcm,ax=ax[1])
+    fig.savefig(outdir+'/figs/topo.png')
+
+fname = '../results/IWNoLeith/input/spinup.nc'
+fname2d = '../results/IWNoLeith/input/spinup2d.nc'
+
+with xr.open_dataset(fname2d) as ds:
+    ds = ds.isel(record=-3)
+    _log.info('Time', ds.time)
+    ny0 = ds.sizes['j']
+    nx0 = ds.sizes['i']
+    _log.info('nx0, ny0', nx0, ny0)
+    # interpolate first onto new x...
+    tmp = np.zeros((ny0, nx))
+    print(np.shape(ds.Depth.data))
+    for j in range(ny0):
+        good = np.isfinite(ds.Depth.data[j, :])
+        xx = ds.XC.data[0, good]
+        tmp[j, :] = np.interp(x, xx, ds.Depth.data[j, good] )
+
+    aa = np.zeros((ny,nx))
+    # now interpolate in y....
+    for i in range(nx):
+        good = np.isfinite(tmp[:, i])
+        aa[:, i] = np.interp(y, ds.YC.data[good, 0], tmp[good, i])
+    with open(indir+"/topog.bin", "wb") as f:
+        aa.tofile(f)
+    #
+    fig, ax = plt.subplots(2,1)
+    _log.info('%s %s', shape(x),shape(aa))
+    ax[0].plot(x/1.e3,aa[0,:].T)
+    ax[0].plot(x/1.e3,aa[128,:].T)
+    pcm=ax[1].pcolormesh(x/1.e3,y/1.e3,aa,rasterized=True)
+    fig.colorbar(pcm,ax=ax[1])
+    fig.savefig(outdir+'/figs/topo.png')
+
 
 ##################
 # dz:
@@ -281,34 +314,73 @@ plt.plot(T0,z)
 plt.savefig(outdir+'/figs/TO.pdf')
 
 ###########################
-# velcoity data
+# velocity data
 
-aa = np.zeros((ny,nx))
-for i in range(nx):
-    aa[:,:,i]=U0
-with open(indir+"/Etainit.bin", "wb") as f:
-    aa.tofile(f)
+_log.info('Doing surface height interpolation')
+# get data
 
-aa = np.zeros((nz,ny,nx))
-for i in range(nx):
-    aa[:,:,i]=U0
-with open(indir+"/Uinit.bin", "wb") as f:
-    aa.tofile(f)
+with xr.open_dataset(fname2d) as ds:
+    ds = ds.isel(record=-3)
+    _log.info('Time', ds.time)
+    ny0 = ds.sizes['j']
+    nx0 = ds.sizes['i']
+    _log.info('nx0, ny0', nx0, ny0)
+    # interpolate first onto new x...
+    tmp = np.zeros((ny0, nx))
+    print(np.shape(ds.ETAN.data))
+    for j in range(ny0):
+        good = np.isfinite(ds.ETAN.data[j, :])
+        xx = ds.XC.data[0, good]
+        tmp[j, :] = np.interp(x, xx, ds.ETAN.data[j, good] )
 
-aa = np.zeros((nz,ny,nx))
-for i in range(nx):
-    aa[:,:,i]=U0
-with open(indir+"/Vinit.bin", "wb") as f:
-    aa.tofile(f)
+    aa = np.zeros((ny,nx))
+    # now interpolate in y....
+    for i in range(nx):
+        good = np.isfinite(tmp[:, i])
+        aa[:, i] = np.interp(y, ds.YC.data[good, 0], tmp[good, i])
+    with open(indir+"/Etainit.bin", "wb") as f:
+        aa.tofile(f)
 
-aa = np.zeros((nz,ny,nx))
-for i in range(nx):
-    aa[:,:,i]=U0
-with open(indir+"/Tinit.bin", "wb") as f:
-    aa.tofile(f)
+    fig, ax = plt.subplots(2, 1)
+    ax[0].pcolormesh(ds.XC, ds.YC, ds.ETAN, rasterized=True)
+    ax[1].pcolormesh(x, y, aa, rasterized=True)
+    fig.savefig(outdir+'/figs/Eta0.png')
 
+# do the velocities....
+# these are written row-major so I think we can do this by level...
 
+with xr.open_dataset(fname) as dss:
+    dss = dss.isel(record=-3)
+    ny0 = ds.sizes['j']
+    nx0 = ds.sizes['i']
+    nz0 = ds.sizes['k']
+    for k in range(nz0):
+        print(k)
+        ds = dss.isel(k=k, k_l=k, k_u=k)
+        if k==0:
+            mode='wb'
+        else:
+            mode='ab'
 
+        for todo, outname in zip(['UVEL', 'VVEL', 'THETA'],
+                ['Uinit.bin', 'Vinit.bin', 'Tinit.bin']):
+            tmp = np.zeros((ny0, nx))
+            for j in range(ny0):
+                good = np.isfinite(ds[todo].data[j, :])
+                xx = ds.XC.data[0, good]
+                tmp[j, :] = np.interp(x, xx, ds[todo].data[j, good] )
+
+            aa = np.zeros((ny,nx))
+            # now interpolate in y....
+            for i in range(nx):
+                good = np.isfinite(tmp[:, i])
+                aa[:, i] = np.interp(y, ds.YC.data[good, 0], tmp[good, i])
+
+            with open(indir+outname, mode) as f:
+                aa.tofile(f)
+                # write twice because this new file has twice as many
+                # vertical leves as the old one...
+                aa.tofile(f)
 
 
 ########################
