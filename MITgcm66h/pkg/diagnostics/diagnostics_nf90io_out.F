@@ -95,8 +95,6 @@ c     CHARACTER*(NLEN) dn_blnk
       LOGICAL lexist
 
 C---+----1----+----2----+----3----+----4----+----5----+----6----+----7-|--+----|
-c     IF (useMNC .AND. diag_mnc) THEN
-
 C        NF90IO: don't think we need this.
 C        _BEGIN_MASTER( myThid )
 
@@ -114,6 +112,7 @@ C     exists and its different than this version, then we should have erased it.
 C     Of course I'm stupid and often forget to erase files.
       INQUIRE(file=fname(1:iLen),exist=lexist)
       IF (.NOT.lexist) THEN
+         print *, "*********initializing file"
          CALL NF90IO_INIT_FILE(fname(1:iLen), myThid)
 C        This defines most of the dimensions and all the grid variables.
 C        Basic init doesn't add timestart and timeend variables. Lets
@@ -144,9 +143,10 @@ C     get the variable id
       print *,"getting varid"
       print *,cdiag(ndId)
       err = nf90_inq_varid(ncid, cdiag(ndId), varid)
+      print *, "err", err, varid
       IF (.NOT.(err.EQ.nf90_NoErr)) THEN
-         print *,"Defining varid"
-         print *,cdiag(ndId)
+        print *,"Defining varid"
+        print *,cdiag(ndId)
 C       we need to define this variable
 C       put in redef mode...
         err = nf90_redef(ncid)
@@ -224,7 +224,7 @@ C             we need to define k_level
      $              "z-dimension of the level grid")
 C              Drop out of def mode to fill the values in here
                err = nf90_enddef(ncid)
-               err = nf90io_var_par_access(ncid, varid)
+               err = nf90io_var_par_access(ncid, varid, NF90_COLLECTIVE)
                CALL nf90ERR(err, "Setting k variable to par access"
      $              ,myThid)
                err = nf90_put_var(ncid, varid, levs(1:nLevOutp, listId),
@@ -255,26 +255,31 @@ C        add attributes to the newy defined variable
 C        no standard name?  Booo
 C        end definition mode...
          err = nf90_enddef(ncid)
+         CALL nf90ERR(err, "enddef",myThid)
+         err = nf90_close(ncid)
+         CALL nf90ERR(err, "Closing netcdf file",myThid)
       ENDIF
 C     Done init variable.  varid should be set to receive!
 
 C TODO: the mnc routines had a bunch of stuff setting the missing value in here.
 C     Need to figure out what record number we are on and increment if we need to
+      err = nf90io_open(fname(1:iLen),ncid)
       err = nf90_inq_dimid(ncid, "record", rec_dimid)
       err = nf90_inquire_dimension(ncid, rec_dimid, len=iRec)
       CALL nf90ERR(err, "Getting length of unlimited dimension",myThid)
       IF (incrementRec) THEN
         iRec = iRec+1
+        print *, 'iRec', iRec
         err = nf90_inq_varid(ncid, "record", varid)
         CALL nf90ERR(err, "Get the record varid",myThid)
-        err = nf90io_var_par_access(ncid, varid)
+        err = nf90io_var_par_access(ncid, varid, NF90_COLLECTIVE)
         err = nf90_put_var(ncid, varid, (/ iRec /), start = (/ iRec /),
      $       count = (/ 1 /) )
         CALL nf90ERR(err, "Write iRec to the record variable",myThid)
 C       TIME: We should add TIMESTART and TIMEEND so that we can spec avg interval
         err = nf90_inq_varid(ncid, "time", varid)
         CALL nf90ERR(err, "Get the time varid",myThid)
-        err = nf90io_var_par_access(ncid, varid)
+        err = nf90io_var_par_access(ncid, varid, NF90_COLLECTIVE)
         err = nf90_put_var(ncid, varid, (/ myTime /), start = (/ iRec /)
      $       ,count = (/ 1 /) )
         CALL nf90ERR(err, "Write time variable",myThid)
@@ -282,26 +287,31 @@ C       TIME: We should add TIMESTART and TIMEEND so that we can spec avg interv
 
         err = nf90_inq_varid(ncid, "timestart", varid)
         CALL nf90ERR(err, "Get the timestart varid",myThid)
-        err = nf90io_var_par_access(ncid, varid)
+        err = nf90io_var_par_access(ncid, varid, NF90_COLLECTIVE)
         err = nf90_put_var(ncid, varid, (/ timeRec(1) /), start = (/
      $       iRec /),count = (/ 1 /) )
         CALL nf90ERR(err, "Write timestart variable",myThid)
         err = nf90_inq_varid(ncid, "timeend", varid)
         CALL nf90ERR(err, "Get the timeend varid",myThid)
-        err = nf90io_var_par_access(ncid, varid)
+        err = nf90io_var_par_access(ncid, varid, NF90_COLLECTIVE)
         err = nf90_put_var(ncid, varid, (/ timeRec(2) /), start = (/
      $       iRec /),count = (/ 1 /) )
         CALL nf90ERR(err, "Write timeend variable",myThid)
 C       ITERATION
         err = nf90_inq_varid(ncid, "iter", varid)
         CALL nf90ERR(err, "Get the time varid",myThid)
-        err = nf90io_var_par_access(ncid, varid)
+        err = nf90io_var_par_access(ncid, varid, NF90_COLLECTIVE)
         err = nf90_put_var(ncid, varid, (/ myIter /), start = (/ iRec /)
      $       ,count = (/ 1 /) )
         CALL nf90ERR(err, "Write iter variable",myThid)
       ENDIF
+      err = nf90_close(ncid)
+      CALL nf90ERR(err, "Closing netcdf file",myThid)
 
 C     Write the data
+      err = nf90io_open(fname(1:iLen),ncid)
+      CALL nf90ERR(err, "Error opening file",myThid)
+      
       IF (nLevOutp.EQ.1) THEN
          CALL NF90IO_FILL_3D(ncid, cdiag(ndId), qtmp(:,:,1,:,:), iRec,
      $        myThid)
@@ -313,7 +323,6 @@ C     Write the data
          CALL NF90IO_FILL_4D(ncid, cdiag(ndId), qtmp, iRec,
      $        myThid)
       ENDIF
-
       err = nf90_close(ncid)
       CALL nf90ERR(err, "Closing netcdf file",myThid)
 

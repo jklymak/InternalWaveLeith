@@ -2,7 +2,7 @@
 
 &diagnostics_list
 # 3D variables.
- frequency(1)  = -44640,
+ frequency(1)  = -49.6,
  timePhase(1)  = 0,
  fields(1:5,1) = 'UVEL    ',
                  'VVEL    ',
@@ -12,7 +12,7 @@
  filename(1)   = 'spinup'
 #
  filename(2)   = 'spinup2d'
- frequency(2)  = -44640,
+ frequency(2)  = -49.6,
  timePhase(2)  = 0,
  fields(1:2,2) = 'ETAN    ',
                  'PHIBOT  ',
